@@ -7,9 +7,7 @@ int main() {
 	ThreadPool tp;
 
 	auto path = []() {
-		bool finished = false;
-
-		while (!finished)
+		for(int i = 0; i < 10; i++)
 		{
 			std::cout << "pathing 1 :)" << std::endl;
 
@@ -18,9 +16,7 @@ int main() {
 	};
 
 	auto pathtwo = []() {
-		bool finished = false;
-
-		while (!finished)
+		for (int i = 0; i < 10; i++)
 		{
 			std::cout << "pathing 2 :)" << std::endl;
 
@@ -29,9 +25,7 @@ int main() {
 	};
 
 	auto paththree = []() {
-		bool finished = false;
-
-		while (!finished)
+		for (int i = 0; i < 10; i++)
 		{
 			std::cout << "pathing 3 :)" << std::endl;
 

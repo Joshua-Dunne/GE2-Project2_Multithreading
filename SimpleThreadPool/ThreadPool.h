@@ -5,6 +5,7 @@
 #include <thread>
 #include <queue>
 #include <functional>
+#include <mutex>
 
 class ThreadPool {
 public:
@@ -15,6 +16,7 @@ public:
 private:
 	std::vector<std::thread> m_threads;
 	static std::queue<std::function<void()>> m_tasks;
+	static std::mutex mtx;
 };
 #endif // !THREAD_POOL_H
 
