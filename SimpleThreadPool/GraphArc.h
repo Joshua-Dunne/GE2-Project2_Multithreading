@@ -1,7 +1,7 @@
 #ifndef GRAPHARC_H
 #define GRAPHARC_H
 
-#include "GraphNode.h"------------------------------------------------------
+#include "GraphNode.h"
 
 /// <summary>
 /// This is the arc class. 

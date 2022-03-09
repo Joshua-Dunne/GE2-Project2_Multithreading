@@ -62,7 +62,7 @@ Graph<NodeType, ArcType>::Graph( int maxNodes ) : m_nodes( maxNodes, nullptr)
 /// </summary>
 template<class NodeType, class ArcType>
 Graph<NodeType, ArcType>::~Graph() {
-   for( int index = 0; index < m_nodes.size(); index++ ) 
+   for(size_t index = 0; index < m_nodes.size(); index++ ) 
    {
         if( m_nodes[index] != nullptr ) 
 		{
@@ -236,6 +236,9 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
     if (start && dest) // make sure the passed in nodes exist
     {   
         std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;
+        bool goalReached = false;
+        Node* closestNode = dest;
+        Node* lastNode = nullptr;
 
         for (Node* node : m_nodes)
         {
@@ -247,21 +250,18 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
         }
 
         start->m_data.m_cost = 0;
-        bool goalReached = false;
-        pq.push(start);
-
         start->setMarked(true);
-
-        Node* closestNode = dest;
-        closestNode->m_data.m_distance = 10000;
-        Node* lastNode = nullptr;
+        pq.push(start);
+        
+        closestNode->m_data.m_distance = 40000;
+        
 
         while (!pq.empty() && pq.top() != dest)
         { // while there are nodes to go through, and the top node isn't the destination
             for (auto arc : pq.top()->arcList())
             { // go through all the arcs for the top node
                 if (arc.node() != pq.top()->previous())
-                { // while each arc's destination node is not equal to the 
+                { // make sure we do not process the node we're arcing from
                     int distantChild = pq.top()->m_data.m_cost + arc.weight() + arc.node()->m_data.m_distance;
 
                     if (arc.node()->m_data.m_passable)
@@ -269,20 +269,14 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
                         if (distantChild < arc.node()->m_data.m_distance + arc.node()->m_data.m_cost)
                         {
                             arc.node()->m_data.m_cost = pq.top()->m_data.m_cost + arc.weight();
-
                             arc.node()->setPrevious(pq.top());
-
                         }
                     }
                     if (!arc.node()->marked())
                     {
-
                         pq.push(arc.node());
-
                         arc.node()->setMarked(true);
                     }
-
-
                 }
             }
 
@@ -294,9 +288,9 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
             }
 
             pq.pop();
-
         }
 
+        // After picking the path to move to, add it to the queue backwards
         Node* current = pq.top();
         while (current != nullptr)
         {
