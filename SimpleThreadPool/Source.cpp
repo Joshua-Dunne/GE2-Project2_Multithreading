@@ -1,6 +1,22 @@
-/*#include <ThreadPool.h>
+#ifdef _DEBUG 
+#pragma comment(lib,"sfml-graphics-d.lib") 
+#pragma comment(lib,"sfml-audio-d.lib") 
+#pragma comment(lib,"sfml-system-d.lib") 
+#pragma comment(lib,"sfml-window-d.lib") 
+#pragma comment(lib,"sfml-network-d.lib") 
+#else 
+#pragma comment(lib,"sfml-graphics.lib") 
+#pragma comment(lib,"sfml-audio.lib") 
+#pragma comment(lib,"sfml-system.lib") 
+#pragma comment(lib,"sfml-window.lib") 
+#pragma comment(lib,"sfml-network.lib") 
+#endif 
+
+#include <ThreadingSingleton.h>
 
 using namespace std::literals::chrono_literals;
+
+ThreadingSingleton* ThreadingSingleton::instance = 0;
 
 std::function<void()> generateTask(std::string t_output)
 {
@@ -18,32 +34,21 @@ std::function<void()> generateTask(std::string t_output)
 
 int main() {
 
-	ThreadPool tp;
+	ThreadingSingleton* s = s->getInstance();
 
 	// for demonstration, add multiple of the same function
 
 	for (int i = 0; i < 100; i++)
 	{
-		tp.addTask(generateTask("path task " + std::to_string(i)));
+		s->pool().addTask(generateTask("path task " + std::to_string(i)));
 	}
 	
-
 	system("pause");
-}*/
 
-#ifdef _DEBUG 
-#pragma comment(lib,"sfml-graphics-d.lib") 
-#pragma comment(lib,"sfml-audio-d.lib") 
-#pragma comment(lib,"sfml-system-d.lib") 
-#pragma comment(lib,"sfml-window-d.lib") 
-#pragma comment(lib,"sfml-network-d.lib") 
-#else 
-#pragma comment(lib,"sfml-graphics.lib") 
-#pragma comment(lib,"sfml-audio.lib") 
-#pragma comment(lib,"sfml-system.lib") 
-#pragma comment(lib,"sfml-window.lib") 
-#pragma comment(lib,"sfml-network.lib") 
-#endif 
+}//*/
+
+/*
+
 
 #include <iostream>
 #include "Game.h"
@@ -69,4 +74,4 @@ int main()
 	}
 
 	return 0;
-}
+}*/

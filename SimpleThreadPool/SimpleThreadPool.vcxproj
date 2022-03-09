@@ -134,6 +134,7 @@
     <ClInclude Include="GraphNode.h" />
     <ClInclude Include="NodeComparer.h" />
     <ClInclude Include="NodeData.h" />
+    <ClInclude Include="ThreadingSingleton.h" />
     <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
