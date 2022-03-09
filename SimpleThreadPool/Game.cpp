@@ -1,6 +1,6 @@
 #include "Game.h"
 
-Game::Game() :	m_window(sf::VideoMode(800u, 600u), "Lab1")
+Game::Game() :	m_window(sf::VideoMode(800u, 600u), "A*mbush Thread Pooling")
 {
 	//m_window.setFramerateLimit(60u);
 	
