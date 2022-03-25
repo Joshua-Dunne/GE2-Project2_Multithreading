@@ -1,6 +1,6 @@
 #include "CellGenerator.h"
 
-CellGenerator::CellGenerator() : m_graph(768)
+CellGenerator::CellGenerator() : m_graph(c_MAX_X * c_MAX_Y)
 {
 }
 
@@ -24,10 +24,13 @@ void CellGenerator::populateData()
 {
 	int currCell = 0;
 	
+	// Node generation
 	for (int yPos = 0; yPos < c_MAX_Y; yPos++)
 	{
+		m_data.push_back(std::vector<NodeData>());
 		for (int xPos = 0; xPos < c_MAX_X; xPos++, currCell++)
 		{
+			m_data[yPos].push_back(NodeData());
 			m_data[yPos][xPos].m_x = xPos * c_NODE_SIZE;
 			m_data[yPos][xPos].m_y = yPos * c_NODE_SIZE;
 			m_data[yPos][xPos].m_name = currCell;
@@ -36,9 +39,39 @@ void CellGenerator::populateData()
 		}
 	}
 
-	// Now that the Data has been filled, generate the nodes.txt
-	generateNodesFile();
+	// Arc Generation
+	for (int row = 0; row < c_MAX_Y; row++)
+	{
+		for (int col = 0; col < c_MAX_X; col++)
+		{
+			for (int direction = 0; direction < 9; direction++) {
+				if (direction == 4) continue; // Skip 4, this is ourself.
 
+				int n_row = row + ((direction % 3) - 1); // Neighbor row
+				int n_col = col + ((direction / 3) - 1); // Neighbor column
+
+				// Check the bounds:
+				if (n_row >= 0 && n_row < c_MAX_Y && n_col >= 0 && n_col < c_MAX_X) {
+					int cost;
+
+					// 0,2,6,8 are Diagonal, so we need to apply the correct cost
+					if (direction == 0 || direction % 2 == 0)
+					{
+						cost = c_NODE_SIZE * 2;
+						m_graph.addArc(m_data[row][col].m_name, m_data[n_row][n_col].m_name, cost);
+					}
+					else // 1,3,5,7 are next to the node, so give them the correct cost
+					{
+						cost = c_NODE_SIZE;
+						m_graph.addArc(m_data[row][col].m_name, m_data[n_row][n_col].m_name, cost);
+					}
+				}
+			}
+		}
+	}
+
+	// Now that the Data has been filled, generate required files
+	generateNodesFile();
 	generateArcsFile();
 }
 
@@ -88,43 +121,44 @@ void CellGenerator::generateArcsFile()
 	std::fstream saveToFile;
 	saveToFile.open(saveFileName, std::fstream::out);
 
-	if (saveToFile.is_open())
+	if (!fileExists(saveFileName.c_str()))
 	{
-		for (int row = 0; row < c_MAX_Y; row++)
+		if (saveToFile.is_open())
 		{
-			for (int col = 0; col < c_MAX_X; col++)
+			for (int row = 0; row < c_MAX_Y; row++)
 			{
-				for (int direction = 0; direction < 9; direction++) {
-					if (direction == 4) continue; // Skip 4, this is ourself.
+				for (int col = 0; col < c_MAX_X; col++)
+				{
+					for (int direction = 0; direction < 9; direction++) {
+						if (direction == 4) continue; // Skip 4, this is ourself.
 
-					int n_row = row + ((direction % 3) - 1); // Neighbor row
-					int n_col = col + ((direction / 3) - 1); // Neighbor column
+						int n_row = row + ((direction % 3) - 1); // Neighbor row
+						int n_col = col + ((direction / 3) - 1); // Neighbor column
 
-					// Check the bounds:
-					if (n_row >= 0 && n_row < c_MAX_Y && n_col >= 0 && n_col < c_MAX_X) {
-						int cost;
+						// Check the bounds:
+						if (n_row >= 0 && n_row < c_MAX_Y && n_col >= 0 && n_col < c_MAX_X) {
+							int cost;
 
-						// 0,2,6,8 are Diagonal, so we need to apply the correct cost
-						if (direction == 0 || direction % 2 == 0)
-						{
-							cost = c_NODE_SIZE * 2;
-							m_graph.addArc(m_data[row][col].m_name, m_data[n_row][n_col].m_name, cost);
+							// 0,2,6,8 are Diagonal, so we need to apply the correct cost
+							if (direction == 0 || direction % 2 == 0)
+							{
+								cost = c_NODE_SIZE * 2;
+							}
+							else // 1,3,5,7 are next to the node, so give them the correct cost
+							{
+								cost = c_NODE_SIZE;
+							}
+
+							// Now that it's been added to the Graph, output it to our file
+							saveToFile << m_data[row][col].m_name <<
+								" " << m_data[n_row][n_col].m_name <<
+								" " << cost << std::endl;
 						}
-						else // 1,3,5,7 are next to the node, so give them the correct cost
-						{
-							cost = c_NODE_SIZE;
-							m_graph.addArc(m_data[row][col].m_name, m_data[n_row][n_col].m_name, cost);
-						}
-
-
-						// Now that it's been added to the Graph, output it to our file
-						saveToFile << m_data[row][col].m_name <<
-							" " << m_data[n_row][n_col].m_name <<
-							" " << cost << std::endl;
 					}
 				}
 			}
 		}
 	}
+	
 	saveToFile.close(); // now that we're done, close the file
 }

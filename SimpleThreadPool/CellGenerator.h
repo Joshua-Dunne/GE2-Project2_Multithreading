@@ -9,16 +9,11 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 class CellGenerator
 {
-	static const int c_MAX_X = 100;
-	static const int c_MAX_Y = 100;
-
-	static const int c_NODE_SIZE = 25;
-
 	Graph<NodeData, int> m_graph;
-	NodeData m_data[c_MAX_Y][c_MAX_X]; // 100x100 grid of nodes
 
 	bool fileExists(const char* fileName);
 
@@ -27,6 +22,12 @@ class CellGenerator
 
 public:
 	CellGenerator();
+
+	static const int c_MAX_X = 100;
+	static const int c_MAX_Y = 100;
+	static const int c_NODE_SIZE = 25;
+
+	std::vector<std::vector<NodeData>> m_data; // grid of nodes
 
 	void populateData();
 	inline Graph<NodeData, int>& getGraph() { return m_graph; };

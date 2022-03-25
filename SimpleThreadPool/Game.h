@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include "CellGenerator.h"
 
 class Game
 {
@@ -18,6 +19,8 @@ public:
 	void processInput();
 	void update(sf::Time& dt);
 	void render();
+
+	CellGenerator cg;
 };
 
 #endif

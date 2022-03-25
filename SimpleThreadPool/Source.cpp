@@ -12,7 +12,8 @@
 #pragma comment(lib,"sfml-network.lib") 
 #endif 
 
-#include <ThreadingSingleton.h>
+/*#include <ThreadingSingleton.h>
+#include <string>
 
 using namespace std::literals::chrono_literals;
 
@@ -45,13 +46,15 @@ int main() {
 	
 	system("pause");
 
-}//*/
-
-/*
+}*/
 
 
+
+#include <ThreadingSingleton.h>
 #include <iostream>
 #include "Game.h"
+
+ThreadingSingleton* ThreadingSingleton::instance = 0;
 
 int main()
 {
@@ -74,4 +77,4 @@ int main()
 	}
 
 	return 0;
-}*/
+}//*/
