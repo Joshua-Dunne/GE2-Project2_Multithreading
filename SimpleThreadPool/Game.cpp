@@ -5,11 +5,32 @@ Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 	//m_window.setFramerateLimit(60u);
 	cg.populateData();
 
+	std::vector<std::pair<int, int>> choices;
+
 	for (int i = 0; i < c_MAX_NPCs; i++)
 	{
 		int randX = (rand() % cg.c_MAX_X);
 		int randY = (rand() % cg.c_MAX_Y);
+		bool reset = false;
+
+		for (auto choice : choices)
+		{
+			if (randX == choice.first && randY == choice.second)
+			{
+				i--; // if this spot is already picked,
+					 // reset the current working NPC and reroll
+				reset = true;
+				continue;
+			}	
+		}
+
+		if (randX == c_PLAYER_X && randY == c_PLAYER_Y) // reroll position if this spot is where the player is
+			reset = true;
+
+		if (reset) continue;
+
 		m_NPCs.push_back(new NPC(cg.getGraph(), cg.m_data[randY][randX].m_name));
+		choices.push_back(std::pair<int, int>(randX, randY));
 	}
 }
 
@@ -52,6 +73,14 @@ void Game::processInput()
 		{
 			m_window.close();
 		}
+
+		if (event.type == sf::Event::KeyPressed)
+		{
+			if (event.key.code == sf::Keyboard::Space)
+			{
+				beginPath();
+			}
+		}
 	}
 }
 
@@ -71,6 +100,9 @@ void Game::render()
 
 	int alternate = 0;
 
+	sf::RectangleShape space;
+	space.setSize(sf::Vector2f{ 25.0f, 25.0f });
+
 	// Draw Graph
 	for (int y = 0; y < cg.c_MAX_Y; y++)
 	{
@@ -80,8 +112,6 @@ void Game::render()
 
 			current = data[y][x];
 
-			sf::RectangleShape space;
-			space.setSize(sf::Vector2f{ 25.0f, 25.0f });
 			space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
 
 			switch (alternate)
@@ -108,13 +138,35 @@ void Game::render()
 	{
 		NodeData current = ai->m_data;
 
-		sf::RectangleShape space;
-		space.setSize(sf::Vector2f{ 25.0f, 25.0f });
 		space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
 		space.setFillColor(sf::Color::Red);
 
 		m_window.draw(space);
 	}
 
+	// finally, draw the Player
+	space.setPosition(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_x, cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_y);
+	space.setFillColor(sf::Color::Magenta);
+	m_window.draw(space);
+
+	// finally, draw any paths
+	for (auto ai : m_NPCs)
+	{
+		ai->drawPath(m_window);
+	}
+	
+
 	m_window.display();
+}
+
+void Game::beginPath()
+{
+	int playerCell = cg.m_data[c_PLAYER_Y][c_PLAYER_X].m_name;
+
+	std::cout << playerCell << std::endl;
+
+	for (auto AI : m_NPCs)
+	{
+		AI->beginPathing(playerCell);
+	}
 }

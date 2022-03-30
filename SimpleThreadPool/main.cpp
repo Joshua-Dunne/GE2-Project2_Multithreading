@@ -54,6 +54,7 @@ int main() {
 #include <iostream>
 #include "Game.h"
 
+// In order for the Singleton to function, the initial instance has to be created.
 ThreadingSingleton* ThreadingSingleton::instance = 0;
 
 int main()

@@ -290,14 +290,23 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
         }
 
         // After picking the path to move to, add it to the queue backwards
-        Node* current = pq.top();
-        while (current != nullptr)
+        
+        if (pq.size() > 0)
         {
-            path.push_back(current);
+            Node* current = pq.top();
+            while (current != nullptr)
+            {
+                path.push_back(current);
 
-            current = current->previous();
-                   
+                current = current->previous();
+
+            }
         }
+        else
+        {
+            std::cout << "PQ empty!" << std::endl;
+        }
+        
     }
 }
 

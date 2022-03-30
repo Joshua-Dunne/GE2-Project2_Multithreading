@@ -17,14 +17,15 @@ public:
 	}
 
 	void beginPathing(int t_dest);
-	void generatePath();
-	//void moveOnPath();
-	
 	NodeData m_data;
+
+	void drawPath(sf::RenderWindow& t_window);
 
 private:
 	Graph<NodeData, int>& m_graph;
 	std::vector<GraphNode<NodeData, int>*> path;
+
+	void generatePath();
 	
 	int m_pos = -1;
 	int m_dest = -1;
