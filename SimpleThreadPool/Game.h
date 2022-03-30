@@ -4,6 +4,7 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include "CellGenerator.h"
+#include "NPC.h"
 
 class Game
 {
@@ -13,6 +14,9 @@ public:
 private:
 	sf::RenderWindow m_window;
 	sf::Clock m_updateClock;
+
+	const int c_MAX_NPCs = 5;
+	std::vector<NPC*> m_NPCs;
 
 public:
 	void run();

@@ -58,6 +58,8 @@ ThreadingSingleton* ThreadingSingleton::instance = 0;
 
 int main()
 {
+	srand(static_cast<unsigned int>(time(NULL))); // randomize seed
+
 	try
 	{
 		Game game;

@@ -1,7 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-
 #include <list>
 #include <queue>
 #include <vector>
@@ -211,7 +210,7 @@ GraphArc<NodeType, ArcType>* Graph<NodeType, ArcType>::getArc( int from, int to 
 template<class NodeType, class ArcType>
 void Graph<NodeType, ArcType>::clearMarks() 
 {
-     for( int index = 0; index < m_nodes.size(); index++ ) 
+     for( size_t index = 0; index < m_nodes.size(); index++ ) 
 	 {
           if( nullptr != m_nodes.at(index) ) 
 		  {
@@ -245,7 +244,7 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
             node->m_data.m_cost = std::numeric_limits<int>::max()-100000; // we do not know the cost until we discover it
 
             // however, we can calculate the distance to the other nodes here
-            node->m_data.m_distance = sqrt(pow(dest->m_data.m_x - node->m_data.m_x,2) + pow(dest->m_data.m_y - node->m_data.m_y, 2));
+            node->m_data.m_distance = static_cast<int>(sqrt(pow(dest->m_data.m_x - node->m_data.m_x,2) + pow(dest->m_data.m_y - node->m_data.m_y, 2)));
 
         }
 
@@ -305,7 +304,7 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
 template<class NodeType, class ArcType>
 inline void Graph<NodeType, ArcType>::reset()
 {
-    for (int index = 0; index < m_nodes.size(); index++)
+    for (size_t index = 0; index < m_nodes.size(); index++)
     {
         
         m_nodes[index]->setPrevious(nullptr);

@@ -134,12 +134,14 @@
     <ClInclude Include="GraphNode.h" />
     <ClInclude Include="NodeComparer.h" />
     <ClInclude Include="NodeData.h" />
+    <ClInclude Include="NPC.h" />
     <ClInclude Include="ThreadingSingleton.h" />
     <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CellGenerator.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="NPC.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>

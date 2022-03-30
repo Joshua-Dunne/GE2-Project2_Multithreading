@@ -71,8 +71,9 @@ void CellGenerator::populateData()
 	}
 
 	// Now that the Data has been filled, generate required files
-	generateNodesFile();
-	generateArcsFile();
+	// Uncomment to view data in text file for debugging purposes
+	//generateNodesFile();
+	//generateArcsFile();
 }
 
 /// <summary>

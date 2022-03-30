@@ -38,6 +38,8 @@ void ThreadPool::checkTasks()
 			continue; // if no tasks are found, go back up to the spin and wait for more
 		}
 
+		std::cout << "Thread taking task..." << std::endl;
+
 		auto task = m_tasks.front();
 
 		m_tasks.pop();
