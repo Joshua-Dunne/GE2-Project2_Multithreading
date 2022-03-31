@@ -8,6 +8,7 @@ struct NodeData
 {
 	int m_name;
 	int m_cost;
+	int m_additionalCost = 0;
 	int m_distance;
 	int m_x;
 	int m_y;

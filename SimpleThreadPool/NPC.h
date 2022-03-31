@@ -22,8 +22,8 @@ public:
 	void drawPath(sf::RenderWindow& t_window);
 
 private:
-	Graph<NodeData, int>& m_graph;
-	std::vector<GraphNode<NodeData, int>*> path;
+	Graph<NodeData, int> m_graph;
+	std::vector<GraphNode<NodeData, int>> path;
 
 	void generatePath();
 	

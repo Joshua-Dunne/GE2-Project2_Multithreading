@@ -47,6 +47,8 @@ void ThreadPool::checkTasks()
 		mtx.unlock(); // now that a single thread has been assigned a task, allow other threads to acquire a task
 
 		task();
+
+		std::cout << "Thread completed task." << std::endl;
 	}
 	
 }

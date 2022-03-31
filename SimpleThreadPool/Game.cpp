@@ -133,6 +133,12 @@ void Game::render()
 		(alternate == 0) ? alternate = 1 : alternate = 0;
 	}
 
+	// draw any paths
+	for (auto ai : m_NPCs)
+	{
+		ai->drawPath(m_window);
+	}
+
 	// with graph drawn, now draw NPCs
 	for (auto ai : m_NPCs)
 	{
@@ -148,12 +154,6 @@ void Game::render()
 	space.setPosition(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_x, cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_y);
 	space.setFillColor(sf::Color::Magenta);
 	m_window.draw(space);
-
-	// finally, draw any paths
-	for (auto ai : m_NPCs)
-	{
-		ai->drawPath(m_window);
-	}
 	
 
 	m_window.display();

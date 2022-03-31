@@ -7,6 +7,8 @@
 #include <functional>
 #include "NodeComparer.h"
 #include <iostream>
+#include <mutex>
+
 template <class NodeType, class ArcType> class GraphArc;
 template <class NodeType, class ArcType> class GraphNode;
 
@@ -25,6 +27,7 @@ public:
     // Constructor and destructor functions
     Graph( int size );
     ~Graph();
+    
 
     // Accessors
     Node * nodeIndex(int index) const 
@@ -39,12 +42,14 @@ public:
     void removeArc( int from, int to );
     Arc* getArc( int from, int to );        
     void clearMarks();
-    void aStar(Node* start, Node* dest, std::vector<Node*>& path);
+    void aStar(Node* start, Node* dest, std::vector<Node>& path);
+    void aStarAmbush(Node* start, Node* dest, std::vector<Node>& path);
     void reset();
 private:
 	
 	// Container of all the nodes in the graph.
     std::vector<Node*> m_nodes;
+    static std::mutex mtx;
 };
 
 /// <summary>
@@ -227,13 +232,14 @@ void Graph<NodeType, ArcType>::clearMarks()
 /// <param name="dest">Destination node (goal)</param>
 /// <param name="path">Path generated after a successful function run</param>
 template<class NodeType, class ArcType>
-void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>& path)
+void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node>& path)
 {
+    mtx.lock();
     reset(); // resets all nodes set as previous for a new calculation
     clearMarks(); // clears all nodes that are "marked" (already processed)
 
     if (start && dest) // make sure the passed in nodes exist
-    {   
+    {
         std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;
         bool goalReached = false;
         Node* closestNode = dest;
@@ -241,19 +247,19 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
 
         for (Node* node : m_nodes)
         {
-            node->m_data.m_cost = std::numeric_limits<int>::max()-100000; // we do not know the cost until we discover it
+            node->m_data.m_cost = std::numeric_limits<int>::max() - 100000; // we do not know the cost until we discover it
 
             // however, we can calculate the distance to the other nodes here
-            node->m_data.m_distance = static_cast<int>(sqrt(pow(dest->m_data.m_x - node->m_data.m_x,2) + pow(dest->m_data.m_y - node->m_data.m_y, 2)));
+            node->m_data.m_distance = static_cast<int>(sqrt(pow(dest->m_data.m_x - node->m_data.m_x, 2) + pow(dest->m_data.m_y - node->m_data.m_y, 2)));
 
         }
 
         start->m_data.m_cost = 0;
         start->setMarked(true);
         pq.push(start);
-        
+
         closestNode->m_data.m_distance = 40000;
-        
+
 
         while (!pq.empty() && pq.top() != dest)
         { // while there are nodes to go through, and the top node isn't the destination
@@ -290,13 +296,13 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
         }
 
         // After picking the path to move to, add it to the queue backwards
-        
+
         if (pq.size() > 0)
         {
             Node* current = pq.top();
             while (current != nullptr)
             {
-                path.push_back(current);
+                path.push_back(*current);
 
                 current = current->previous();
 
@@ -306,7 +312,108 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node*>
         {
             std::cout << "PQ empty!" << std::endl;
         }
-        
+
+        mtx.unlock();
+    }
+}
+
+/// <summary>
+/// Uses A* to generate a path from the start node to the end node.
+/// This path is stored through a referenced vector, so nothing has to be returned.
+/// Implements A*mbush by giving an additional Cost on top of the normal cost.
+/// </summary>
+/// <param name="start">Starting node</param>
+/// <param name="dest">Destination node (goal)</param>
+/// <param name="path">Path generated after a successful function run</param>
+template<class NodeType, class ArcType>
+void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<Node>& path)
+{
+    mtx.lock();
+    reset(); // resets all nodes set as previous for a new calculation
+    clearMarks(); // clears all nodes that are "marked" (already processed)
+
+    if (start && dest) // make sure the passed in nodes exist
+    {
+        std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;
+        bool goalReached = false;
+        Node* closestNode = dest;
+        Node* lastNode = nullptr;
+
+        for (Node* node : m_nodes)
+        {
+            node->m_data.m_cost = std::numeric_limits<int>::max() - 100000; // we do not know the cost until we discover it
+
+            // however, we can calculate the distance to the other nodes here
+            node->m_data.m_distance = static_cast<int>(sqrt(pow(dest->m_data.m_x - node->m_data.m_x, 2) + pow(dest->m_data.m_y - node->m_data.m_y, 2)));
+
+        }
+
+        start->m_data.m_cost = 0 + start->m_data.m_additionalCost;
+        start->setMarked(true);
+        pq.push(start);
+
+        closestNode->m_data.m_distance = 40000;
+
+
+        while (!pq.empty() && pq.top() != dest)
+        { // while there are nodes to go through, and the top node isn't the destination
+            for (auto arc : pq.top()->arcList())
+            { // go through all the arcs for the top node
+                if (arc.node() != pq.top()->previous())
+                { // make sure we do not process the node we're arcing from
+                    int distantChild = (pq.top()->m_data.m_cost + pq.top()->m_data.m_additionalCost) + arc.weight() + arc.node()->m_data.m_distance;
+
+                    if (arc.node()->m_data.m_passable)
+                    {
+                        if (distantChild < arc.node()->m_data.m_distance + (arc.node()->m_data.m_cost + arc.node()->m_data.m_additionalCost))
+                        {
+                            arc.node()->m_data.m_cost = (pq.top()->m_data.m_cost + pq.top()->m_data.m_additionalCost) + arc.weight();
+                            arc.node()->setPrevious(pq.top());
+                        }
+                    }
+                    if (!arc.node()->marked())
+                    {
+                        pq.push(arc.node());
+                        arc.node()->setMarked(true);
+                    }
+                }
+            }
+
+            lastNode = pq.top();
+
+            if ((lastNode->m_data.m_distance) < (closestNode->m_data.m_distance))
+            {
+                closestNode = lastNode;
+            }
+
+            pq.pop();
+        }
+
+        // After picking the path to move to, add it to the queue backwards
+
+        if (pq.size() > 0)
+        {
+            Node* current = pq.top();
+            while (current != nullptr)
+            {
+                path.push_back(*current);
+
+                // For A*mbush, we will add an additional cost to our initial cost.
+                // A* typically does not know the cost, and resets it until it is found
+                // to sidestep this, we will calculate the additional cost in a separate variable
+                // and apply the cost later on when it is needed
+                current->m_data.m_additionalCost += 50;
+
+                current = current->previous();
+
+            }
+        }
+        else
+        {
+            std::cout << "PQ empty!" << std::endl;
+        }
+
+        mtx.unlock();
     }
 }
 
