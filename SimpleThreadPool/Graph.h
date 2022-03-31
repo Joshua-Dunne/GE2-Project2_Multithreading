@@ -402,7 +402,9 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
                 // A* typically does not know the cost, and resets it until it is found
                 // to sidestep this, we will calculate the additional cost in a separate variable
                 // and apply the cost later on when it is needed
-                current->m_data.m_additionalCost += 50;
+                
+                if(current != dest) // do not increase the cost of the destination node
+                    current->m_data.m_additionalCost += 50;
 
                 current = current->previous();
 
@@ -413,6 +415,10 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
             std::cout << "PQ empty!" << std::endl;
         }
 
+        mtx.unlock();
+    }
+    else // in case of error, we need to unlock the mutex
+    {
         mtx.unlock();
     }
 }

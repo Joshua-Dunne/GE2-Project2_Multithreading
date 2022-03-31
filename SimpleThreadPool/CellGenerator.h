@@ -23,8 +23,8 @@ class CellGenerator
 public:
 	CellGenerator();
 
-	static const int c_MAX_X = 30;
-	static const int c_MAX_Y = 30;
+	static const int c_MAX_X = 100;
+	static const int c_MAX_Y = 100;
 	static const int c_NODE_SIZE = 25;
 
 	std::vector<std::vector<NodeData>> m_data; // grid of nodes

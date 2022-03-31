@@ -6,11 +6,14 @@
 #include <queue>
 #include <functional>
 #include <mutex>
+#include <chrono>
 
 class ThreadPool {
 public:
 	ThreadPool();
 	~ThreadPool();
+
+	void initializeThreads();
 	void addTask(std::function<void()>);
 	static void checkTasks();
 private:

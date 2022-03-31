@@ -2,8 +2,11 @@
 
 Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 {
+	gameView = m_window.getDefaultView();
 	//m_window.setFramerateLimit(60u);
 	cg.populateData();
+
+	s->pool().initializeThreads();
 
 	std::vector<std::pair<int, int>> choices;
 
@@ -78,8 +81,21 @@ void Game::processInput()
 		{
 			if (event.key.code == sf::Keyboard::Space)
 			{
+				//s->pool().initializeThreads();
 				beginPath();
 			}
+
+			if (event.key.code == sf::Keyboard::Enter)
+			{
+				drawGraph = !drawGraph;
+			}
+		}
+
+		if (event.type == sf::Event::MouseWheelMoved)
+		{
+			std::cout << "wheel movement: " << event.mouseWheel.delta / 100.0f << std::endl;
+
+			gameView.zoom(1.0f - event.mouseWheel.delta / 99.0f);
 		}
 	}
 }
@@ -87,6 +103,28 @@ void Game::processInput()
 void Game::update(sf::Time& dt)
 {
 	// Update elements
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+	{
+		gameView.move(0, -viewMoveSpeed * dt.asSeconds());
+		
+	}
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+	{
+		gameView.move(-viewMoveSpeed * dt.asSeconds(), 0);
+	}
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+	{
+		gameView.move(0, viewMoveSpeed * dt.asSeconds());
+		
+	}
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+	{
+		gameView.move(viewMoveSpeed * dt.asSeconds(), 0);
+	}
+	m_window.setView(gameView);
 	
 }
 
@@ -98,39 +136,28 @@ void Game::render()
 
 	auto data = cg.m_data;
 
-	int alternate = 0;
-
 	sf::RectangleShape space;
 	space.setSize(sf::Vector2f{ 25.0f, 25.0f });
+	space.setFillColor(sf::Color::Black);
+	space.setOutlineColor(sf::Color::White);
+	space.setOutlineThickness(2.0f);
 
 	// Draw Graph
-	for (int y = 0; y < cg.c_MAX_Y; y++)
+	if(drawGraph)
 	{
-		for (int x = 0; x < cg.c_MAX_X; x++)
+		for (int y = 0; y < cg.c_MAX_Y; y++)
 		{
-			NodeData current;
-
-			current = data[y][x];
-
-			space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
-
-			switch (alternate)
+			for (int x = 0; x < cg.c_MAX_X; x++)
 			{
-			case 0:
-				alternate++;
-				space.setFillColor(sf::Color::White);
-				break;
-			case 1:
-				alternate--;
-				space.setFillColor(sf::Color::Green);
-				break;
+				NodeData current;
+
+				current = data[y][x];
+
+				space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+
+				m_window.draw(space);
 			}
-
-			m_window.draw(space);
 		}
-
-		// for each row, flip the color
-		(alternate == 0) ? alternate = 1 : alternate = 0;
 	}
 
 	// draw any paths
@@ -151,7 +178,7 @@ void Game::render()
 	}
 
 	// finally, draw the Player
-	space.setPosition(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_x, cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_y);
+	space.setPosition(static_cast<float>(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_x), static_cast<float>(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_y));
 	space.setFillColor(sf::Color::Magenta);
 	m_window.draw(space);
 	

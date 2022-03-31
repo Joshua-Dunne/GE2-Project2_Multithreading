@@ -1,34 +1,37 @@
 #include <ThreadPool.h>
 
+using namespace std::chrono_literals;
+
 std::queue<std::function<void()>> ThreadPool::m_tasks;
 std::mutex ThreadPool::mtx;
 
-static bool running = true;
+static bool s_running = true;
 
-ThreadPool::ThreadPool() {
-	
+ThreadPool::ThreadPool() {}
+
+ThreadPool::~ThreadPool() {}
+
+void ThreadPool::initializeThreads()
+{
 	int cores = std::thread::hardware_concurrency() - 1;
-	
+
 	for (int i = 0; i < cores; i++)
 	{
 		m_threads.push_back(std::thread(checkTasks));
 	}
-
 }
 
-ThreadPool::~ThreadPool() {}
-
-
-void ThreadPool::addTask(std::function<void()> task) 
+void ThreadPool::addTask(std::function<void()> task)
 {
 	m_tasks.push(task);
 }
 
 void ThreadPool::checkTasks()
 {
-	while (running)
+	while (s_running)
 	{
-		while (m_tasks.size() == 0) continue;
+
+		while (m_tasks.size() == 0) { std::this_thread::sleep_for(0.5s);  continue; };
 
 		mtx.lock(); // lock down to allow only one thread to potentially be assigned a task
 

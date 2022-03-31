@@ -15,25 +15,28 @@ void NPC::beginPathing(int t_dest)
 
 void NPC::drawPath(sf::RenderWindow& t_window)
 {
-	sf::RectangleShape space;
-	space.setSize(sf::Vector2f{ 25.0f, 25.0f });
-	space.setFillColor(sf::Color::Black);
-
-	for (auto cell : path)
+	if (!generatingPath)
 	{
-		NodeData current;
+		sf::RectangleShape space;
+		space.setSize(sf::Vector2f{ 25.0f, 25.0f });
+		space.setFillColor(pickedPathColor);
 
-		current = cell.m_data;
+		for (size_t i = 0; i < path.size(); i++)
+		{
+			NodeData current;
 
-		space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+			current = path[i].m_data;
 
-		t_window.draw(space);
+			space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+
+			t_window.draw(space);
+		}
 	}
 }
 
 void NPC::generatePath()
 {
+	generatingPath = true;
 	m_graph.aStarAmbush(m_graph.nodeIndex(m_pos), m_graph.nodeIndex(m_dest), path);
-
-	//std::cout << path[0]->m_data.m_name << std::endl;
+	generatingPath = false;
 }
