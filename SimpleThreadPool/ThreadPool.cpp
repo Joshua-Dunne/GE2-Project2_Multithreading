@@ -39,10 +39,15 @@ void ThreadPool::addTask(std::function<void()> task)
 
 void ThreadPool::checkTasks()
 {
+	std::cout << "Thread " << s_queued << " checking in." << std::endl;
+	s_queued++;
+	// wait for all threads to arrive
+	while (s_queued < std::thread::hardware_concurrency() - 1) continue;
+
+	std::cout << "All threads ready" << std::endl;
+
 	while (s_running)
 	{
-		s_queued++;
-
 		while (m_tasks.size() == 0 && s_running) { std::this_thread::sleep_for(0.5s);  continue; };
 
 		if (!s_running) break; // if we are finished running, break out here, don't attempt to run any more tasks
@@ -54,6 +59,7 @@ void ThreadPool::checkTasks()
 		if (m_tasks.size() == 0)
 		{
 			mtx.unlock();
+			s_queued++;
 			continue; // if no tasks are found, go back up to the spin and wait for more
 		}
 
@@ -68,9 +74,9 @@ void ThreadPool::checkTasks()
 		task();
 
 		std::cout << "Thread completed task." << std::endl;
+
+		s_queued++;
 	}
-	
-	s_queued = 0;
 }
 
 void ThreadPool::clearThreads()
@@ -87,6 +93,8 @@ void ThreadPool::clearThreads()
 	{
 		thread.join();
 	}
+
+	s_queued = 0;
 
 	m_threads.clear();
 }

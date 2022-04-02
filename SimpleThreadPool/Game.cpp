@@ -113,7 +113,7 @@ void Game::processInput()
 
 		if (event.type == sf::Event::KeyPressed)
 		{
-			if (event.key.code == sf::Keyboard::Space && m_graphExists)
+			if (event.key.code == sf::Keyboard::Space)
 			{
 				s->pool().initializeThreads();
 				beginPath();
@@ -161,7 +161,6 @@ void Game::update(sf::Time& dt)
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 	{
 		m_gameView.move(0, -m_viewMoveSpeed * dt.asSeconds());
-		
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
