@@ -331,7 +331,7 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
     mtx.lock();
     reset(); // resets all nodes set as previous for a new calculation
     clearMarks(); // clears all nodes that are "marked" (already processed)
-
+    
     if (start && dest) // make sure the passed in nodes exist
     {
         std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;

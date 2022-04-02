@@ -22,13 +22,17 @@ private:
 
 	const int c_PLAYER_X = 2, c_PLAYER_Y = 2;
 
-	bool drawGraph = true;
+	bool m_graphExists = true;
+	bool m_drawGraph = true;
 
-	float viewMoveSpeed = 800.0f;
-	float viewZoom = 1.0f;
-	sf::View gameView;
+	int m_currentShownPath = 0;
+	bool m_showIndividualPaths = false;
 
-	sf::RectangleShape space;
+	float m_viewMoveSpeed = 800.0f;
+	float m_viewZoom = 1.0f;
+	sf::View m_gameView;
+
+	sf::RectangleShape m_space;
 	sf::RenderTexture m_gridTexture;
 
 public:

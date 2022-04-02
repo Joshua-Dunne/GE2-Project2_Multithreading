@@ -6,10 +6,21 @@ std::queue<std::function<void()>> ThreadPool::m_tasks;
 std::mutex ThreadPool::mtx;
 
 static bool s_running = true;
+static unsigned int s_queued = 0;
 
 ThreadPool::ThreadPool() {}
 
-ThreadPool::~ThreadPool() {}
+ThreadPool::~ThreadPool() 
+{
+	s_running = false;
+
+	for (std::thread& thread : m_threads)
+	{
+		thread.join();
+	}
+
+	m_threads.clear();
+}
 
 void ThreadPool::initializeThreads()
 {
@@ -30,10 +41,15 @@ void ThreadPool::checkTasks()
 {
 	while (s_running)
 	{
+		s_queued++;
 
-		while (m_tasks.size() == 0) { std::this_thread::sleep_for(0.5s);  continue; };
+		while (m_tasks.size() == 0 && s_running) { std::this_thread::sleep_for(0.5s);  continue; };
+
+		if (!s_running) break; // if we are finished running, break out here, don't attempt to run any more tasks
 
 		mtx.lock(); // lock down to allow only one thread to potentially be assigned a task
+
+		s_queued--; // since this thread got through the mutex lock, decrement the queued counter.
 
 		if (m_tasks.size() == 0)
 		{
@@ -54,4 +70,23 @@ void ThreadPool::checkTasks()
 		std::cout << "Thread completed task." << std::endl;
 	}
 	
+	s_queued = 0;
+}
+
+void ThreadPool::clearThreads()
+{
+	// if all the threads are queued waiting, threads exist, and all tasks are complete, we can clean up our threads
+	if (s_queued == std::thread::hardware_concurrency() - 1 && m_threads.size() > 0 && m_tasks.size() == 0)
+	{
+		s_running = false;
+	}
+	else
+		return;
+
+	for (std::thread& thread : m_threads)
+	{
+		thread.join();
+	}
+
+	m_threads.clear();
 }

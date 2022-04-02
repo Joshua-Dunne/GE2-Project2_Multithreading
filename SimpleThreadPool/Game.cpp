@@ -2,11 +2,9 @@
 
 Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 {
-	gameView = m_window.getDefaultView();
+	m_gameView = m_window.getDefaultView();
 	//m_window.setFramerateLimit(60u);
 	cg.populateData();
-
-	s->pool().initializeThreads();
 
 	std::vector<std::pair<int, int>> choices;
 
@@ -36,28 +34,39 @@ Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 		choices.push_back(std::pair<int, int>(randX, randY));
 	}
 
-	if (!m_gridTexture.create(2500, 2500))
-	{
-		std::cerr << "Failed to create grid texture in Game.cpp!" << std::endl;
-		throw(std::exception("Failed to create grid texture in Game.cpp!"));
+	if (cg.c_MAX_X != 1000)
+	{ // because of the limits of textures, we will not create a render texture for giant graphs
+		if (!m_gridTexture.create(cg.c_MAX_X * 25u, cg.c_MAX_Y * 25u))
+		{
+			std::cerr << "Failed to create grid texture in Game.cpp!" << std::endl;
+			throw(std::exception("Failed to create grid texture in Game.cpp!"));
+		}
 	}
+	else
+	{
+		m_drawGraph = false;
+		m_graphExists = false;
+	}
+	
 
-	space.setSize(sf::Vector2f{ 25.0f, 25.0f });
-	space.setFillColor(sf::Color::Black);
-	space.setOutlineColor(sf::Color::White);
-	space.setOutlineThickness(2.0f);
+	m_space.setSize(sf::Vector2f{ 25.0f, 25.0f });
+	m_space.setFillColor(sf::Color::Black);
+	m_space.setOutlineColor(sf::Color::White);
+	m_space.setOutlineThickness(2.0f);
+
+	auto& data = cg.m_data;
+	NodeData& current = data[0][0];
+	
 
 	for (int y = 0; y < cg.c_MAX_Y; y++)
 	{
 		for (int x = 0; x < cg.c_MAX_X; x++)
 		{
-			NodeData current;
+			current = data[y][x];
 
-			current = cg.m_data[y][x];
+			m_space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
 
-			space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
-
-			m_gridTexture.draw(space);
+			m_gridTexture.draw(m_space);
 		}
 	}
 }
@@ -104,21 +113,44 @@ void Game::processInput()
 
 		if (event.type == sf::Event::KeyPressed)
 		{
-			if (event.key.code == sf::Keyboard::Space)
+			if (event.key.code == sf::Keyboard::Space && m_graphExists)
 			{
-				//s->pool().initializeThreads();
+				s->pool().initializeThreads();
 				beginPath();
 			}
 
 			if (event.key.code == sf::Keyboard::Enter)
 			{
-				drawGraph = !drawGraph;
+				m_drawGraph = !m_drawGraph;
 			}
+
+			if (event.key.code == sf::Keyboard::BackSpace)
+			{
+				m_showIndividualPaths = !m_showIndividualPaths;
+			}
+
+			if (m_showIndividualPaths)
+			{
+				if (event.key.code == sf::Keyboard::Add)
+				{
+					m_currentShownPath++;
+
+					if (m_currentShownPath > static_cast<int>(m_NPCs.size()) - 1) m_currentShownPath = 0;
+				}
+
+				if (event.key.code == sf::Keyboard::Subtract)
+				{
+					m_currentShownPath--;
+
+					if (m_currentShownPath < 0) m_currentShownPath = m_NPCs.size() - 1;
+				}
+			}
+			
 		}
 
 		if (event.type == sf::Event::MouseWheelMoved)
 		{
-			gameView.zoom(1.0f - event.mouseWheel.delta / 50.0f);
+			m_gameView.zoom(1.0f - event.mouseWheel.delta / 50.0f);
 		}
 	}
 }
@@ -128,26 +160,29 @@ void Game::update(sf::Time& dt)
 	// Update elements
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 	{
-		gameView.move(0, -viewMoveSpeed * dt.asSeconds());
+		m_gameView.move(0, -m_viewMoveSpeed * dt.asSeconds());
 		
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 	{
-		gameView.move(-viewMoveSpeed * dt.asSeconds(), 0);
+		m_gameView.move(-m_viewMoveSpeed * dt.asSeconds(), 0);
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
 	{
-		gameView.move(0, viewMoveSpeed * dt.asSeconds());
+		m_gameView.move(0, m_viewMoveSpeed * dt.asSeconds());
 		
 	}
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 	{
-		gameView.move(viewMoveSpeed * dt.asSeconds(), 0);
+		m_gameView.move(m_viewMoveSpeed * dt.asSeconds(), 0);
 	}
-	m_window.setView(gameView);
+
+	m_window.setView(m_gameView);
+
+	s->pool().clearThreads();
 	
 }
 
@@ -159,40 +194,42 @@ void Game::render()
 
 	auto data = cg.m_data;
 
-	sf::RectangleShape space;
-	space.setSize(sf::Vector2f{ 25.0f, 25.0f });
-	space.setFillColor(sf::Color::Black);
-	space.setOutlineColor(sf::Color::White);
-	space.setOutlineThickness(2.0f);
-
 	// Draw Graph
-	if(drawGraph)
+	if(m_drawGraph)
 	{
 		m_gridTexture.display();
 		m_window.draw(sf::Sprite(m_gridTexture.getTexture()));
 	}
 
 	// draw any paths
-	for (auto ai : m_NPCs)
+	if (!m_showIndividualPaths)
 	{
-		ai->drawPath(m_window);
+		for (auto ai : m_NPCs)
+		{
+			ai->drawPath(m_window);
+		}
 	}
+	else
+	{
+		m_NPCs[m_currentShownPath]->drawPath(m_window);
+	}
+	
 
 	// with graph drawn, now draw NPCs
 	for (auto ai : m_NPCs)
 	{
 		NodeData current = ai->m_data;
 
-		space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
-		space.setFillColor(sf::Color::Red);
+		m_space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+		m_space.setFillColor(sf::Color::Red);
 
-		m_window.draw(space);
+		m_window.draw(m_space);
 	}
 
 	// finally, draw the Player
-	space.setPosition(static_cast<float>(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_x), static_cast<float>(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_y));
-	space.setFillColor(sf::Color::Magenta);
-	m_window.draw(space);
+	m_space.setPosition(static_cast<float>(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_x), static_cast<float>(cg.m_data[c_PLAYER_X][c_PLAYER_Y].m_y));
+	m_space.setFillColor(sf::Color::Magenta);
+	m_window.draw(m_space);
 	
 
 	m_window.display();

@@ -15,6 +15,7 @@ public:
 
 	void initializeThreads();
 	void addTask(std::function<void()>);
+	void clearThreads();
 	static void checkTasks();
 private:
 	std::vector<std::thread> m_threads;
