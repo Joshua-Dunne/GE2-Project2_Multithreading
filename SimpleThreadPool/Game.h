@@ -24,9 +24,12 @@ private:
 
 	bool drawGraph = true;
 
-	float viewMoveSpeed = 200.0f;
+	float viewMoveSpeed = 800.0f;
 	float viewZoom = 1.0f;
 	sf::View gameView;
+
+	sf::RectangleShape space;
+	sf::RenderTexture m_gridTexture;
 
 public:
 	void run();

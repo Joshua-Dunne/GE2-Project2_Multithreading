@@ -35,6 +35,31 @@ Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 		m_NPCs.push_back(new NPC(cg.getGraph(), cg.m_data[randY][randX].m_name));
 		choices.push_back(std::pair<int, int>(randX, randY));
 	}
+
+	if (!m_gridTexture.create(2500, 2500))
+	{
+		std::cerr << "Failed to create grid texture in Game.cpp!" << std::endl;
+		throw(std::exception("Failed to create grid texture in Game.cpp!"));
+	}
+
+	space.setSize(sf::Vector2f{ 25.0f, 25.0f });
+	space.setFillColor(sf::Color::Black);
+	space.setOutlineColor(sf::Color::White);
+	space.setOutlineThickness(2.0f);
+
+	for (int y = 0; y < cg.c_MAX_Y; y++)
+	{
+		for (int x = 0; x < cg.c_MAX_X; x++)
+		{
+			NodeData current;
+
+			current = cg.m_data[y][x];
+
+			space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+
+			m_gridTexture.draw(space);
+		}
+	}
 }
 
 Game::~Game()
@@ -93,9 +118,7 @@ void Game::processInput()
 
 		if (event.type == sf::Event::MouseWheelMoved)
 		{
-			std::cout << "wheel movement: " << event.mouseWheel.delta / 100.0f << std::endl;
-
-			gameView.zoom(1.0f - event.mouseWheel.delta / 99.0f);
+			gameView.zoom(1.0f - event.mouseWheel.delta / 50.0f);
 		}
 	}
 }
@@ -145,19 +168,8 @@ void Game::render()
 	// Draw Graph
 	if(drawGraph)
 	{
-		for (int y = 0; y < cg.c_MAX_Y; y++)
-		{
-			for (int x = 0; x < cg.c_MAX_X; x++)
-			{
-				NodeData current;
-
-				current = data[y][x];
-
-				space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
-
-				m_window.draw(space);
-			}
-		}
+		m_gridTexture.display();
+		m_window.draw(sf::Sprite(m_gridTexture.getTexture()));
 	}
 
 	// draw any paths
