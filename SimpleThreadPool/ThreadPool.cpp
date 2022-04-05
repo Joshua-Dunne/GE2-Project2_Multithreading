@@ -24,12 +24,18 @@ ThreadPool::~ThreadPool()
 
 void ThreadPool::initializeThreads()
 {
+	s_running = true;
+
 	int cores = std::thread::hardware_concurrency() - 1;
 
-	for (int i = 0; i < cores; i++)
+	if (m_threads.size() == 0)
 	{
-		m_threads.push_back(std::thread(checkTasks));
+		for (int i = 0; i < cores; i++)
+		{
+			m_threads.push_back(std::thread(checkTasks));
+		}
 	}
+	
 }
 
 void ThreadPool::addTask(std::function<void()> task)
@@ -39,8 +45,8 @@ void ThreadPool::addTask(std::function<void()> task)
 
 void ThreadPool::checkTasks()
 {
-	std::cout << "Thread " << s_queued << " checking in." << std::endl;
 	s_queued++;
+	std::cout << "Thread " << s_queued << " checking in." << std::endl;
 	// wait for all threads to arrive
 	while (s_queued < std::thread::hardware_concurrency() - 1) continue;
 
@@ -77,6 +83,8 @@ void ThreadPool::checkTasks()
 
 		s_queued++;
 	}
+
+	std::cout << "Thread exiting" << std::endl;
 }
 
 void ThreadPool::clearThreads()
@@ -97,4 +105,6 @@ void ThreadPool::clearThreads()
 	s_queued = 0;
 
 	m_threads.clear();
+
+	std::cout << "Threads cleaned successfully. Thread count: " << m_threads.size() << std::endl;
 }

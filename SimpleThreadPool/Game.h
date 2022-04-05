@@ -17,7 +17,7 @@ private:
 	sf::RenderWindow m_window;
 	sf::Clock m_updateClock;
 
-	const int c_MAX_NPCs = 500;
+	const int c_MAX_NPCs = 5;
 	std::vector<NPC*> m_NPCs;
 
 	const int c_PLAYER_X = 2, c_PLAYER_Y = 2;

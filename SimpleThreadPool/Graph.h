@@ -328,13 +328,16 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node>&
 template<class NodeType, class ArcType>
 void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<Node>& path)
 {
-    mtx.lock();
-    reset(); // resets all nodes set as previous for a new calculation
-    clearMarks(); // clears all nodes that are "marked" (already processed)
+   
     
     if (start && dest) // make sure the passed in nodes exist
     {
         std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;
+        std::cout << "this pq address on thread: " << &pq << std::endl;
+
+        mtx.lock();
+        reset(); // resets all nodes set as previous for a new calculation
+        clearMarks(); // clears all nodes that are "marked" (already processed)
         bool goalReached = false;
         Node* closestNode = dest;
         Node* lastNode = nullptr;

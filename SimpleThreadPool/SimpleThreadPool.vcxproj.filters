@@ -39,13 +39,13 @@
     <ClInclude Include="Game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CellGenerator.h">
-      <Filter>Header Files\A%2a</Filter>
-    </ClInclude>
     <ClInclude Include="ThreadingSingleton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NPC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CellGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
