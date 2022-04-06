@@ -1,7 +1,7 @@
 #ifndef NPC_H
 #define NPC_H
 
-#include <ThreadingSingleton.h>
+#include "ThreadingSingleton.h"
 #include <SFML/Graphics.hpp>
 #include "CellGenerator.h"
 
@@ -23,25 +23,50 @@ public:
 		if (randB > 255) randB = 255;
 
 		pickedPathColor = sf::Color(randR, randG, randB);
+
+		m_worldLoc = sf::Vector2f{ static_cast<float>(m_data.m_x), static_cast<float>(m_data.m_y) };
+
+		space.setSize(sf::Vector2f{ 25.0f, 25.0f });
+		space.setFillColor(pickedPathColor);
 	}
+
+	sf::RectangleShape space;
 
 	void beginPathing(int t_dest);
 	NodeData m_data;
+	int m_currentCell = 0;
 
 	void drawPath(sf::RenderWindow& t_window);
 
+	float m_speed = 60.0f;
+	sf::Vector2f m_worldLoc = sf::Vector2f{ 0,0 };
+
+	bool beganPathing = false;
+	bool atPlayer = false;
+	void usePath(sf::Time& dt);
+
 private:
 	Graph<NodeData, int>& m_graph;
-	std::vector<GraphNode<NodeData, int>> path;
+
+	std::vector<GraphNode<NodeData, int>> fullPath;
+	std::vector<GraphNode<NodeData, int>*> path;
 
 	void generatePath();
-
 	bool generatingPath = false;
 
 	sf::Color pickedPathColor;
 	
 	int m_pos = -1;
 	int m_dest = -1;
+
+	sf::Vector2f normalize(const sf::Vector2f& source)
+	{
+		float length = sqrt((source.x * source.x) + (source.y * source.y));
+		if (length != 0)
+			return sf::Vector2f(source.x / length, source.y / length);
+		else
+			return source;
+	}
 };
 
 #endif

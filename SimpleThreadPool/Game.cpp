@@ -44,8 +44,11 @@ Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 	}
 	else
 	{
-		m_drawGraph = false;
-		m_graphExists = false;
+		if (!m_gridTexture.create(250u * 25u, 250u * 25u))
+		{
+			std::cerr << "Failed to create grid texture in Game.cpp!" << std::endl;
+			throw(std::exception("Failed to create grid texture in Game.cpp!"));
+		}
 	}
 	
 
@@ -54,21 +57,9 @@ Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 	m_space.setOutlineColor(sf::Color::White);
 	m_space.setOutlineThickness(2.0f);
 
-	auto& data = cg.m_data;
-	NodeData& current = data[0][0];
+	drawGrid();
+
 	
-
-	for (int y = 0; y < cg.c_MAX_Y; y++)
-	{
-		for (int x = 0; x < cg.c_MAX_X; x++)
-		{
-			current = data[y][x];
-
-			m_space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
-
-			m_gridTexture.draw(m_space);
-		}
-	}
 }
 
 Game::~Game()
@@ -93,6 +84,7 @@ void Game::run()
 			timeSinceLastUpdate -= timePerFrame;
 			update(timePerFrame);
 		}
+
 		render();
 	}
 }
@@ -148,6 +140,18 @@ void Game::processInput()
 			
 		}
 
+		if (event.type == sf::Event::MouseButtonPressed)
+		{
+			if(event.key.code == sf::Mouse::Left)
+				m_drawing = true;
+		}
+
+		if (event.type == sf::Event::MouseButtonReleased)
+		{
+			if (event.key.code == sf::Mouse::Left)
+				m_drawing = false;
+		}
+
 		if (event.type == sf::Event::MouseWheelMoved)
 		{
 			m_gameView.zoom(1.0f - event.mouseWheel.delta / 50.0f);
@@ -181,8 +185,71 @@ void Game::update(sf::Time& dt)
 
 	m_window.setView(m_gameView);
 
-	s->pool().clearThreads();
+	if (m_drawing)
+	{
+		int currCell = 0;
+		bool found = false;
+
+		for (int yPos = 0; yPos < cg.c_MAX_Y; yPos++)
+		{
+			for (int xPos = 0; xPos < cg.c_MAX_X; xPos++, currCell++)
+			{
+				if (sf::Mouse::getPosition(m_window).x > cg.m_data[yPos][xPos].m_x
+					&& sf::Mouse::getPosition(m_window).x < cg.m_data[yPos][xPos].m_x + cg.c_NODE_SIZE)
+				{
+					if (sf::Mouse::getPosition(m_window).y > cg.m_data[yPos][xPos].m_y
+						&& sf::Mouse::getPosition(m_window).y < cg.m_data[yPos][xPos].m_y + cg.c_NODE_SIZE)
+					{
+						cg.m_data[yPos][xPos].m_passable = false;
+						cg.getGraph().nodeIndex(currCell)->m_data.m_passable = false;
+						drawGrid();
+						found = true;
+						break;
+					}
+				}
+			}
+
+			if (found) break;
+		}
+	}
+
+	for (auto& ai : m_NPCs)
+	{
+		ai->usePath(dt);
+	}
+
+	//s->pool().clearThreads();
 	
+}
+
+void Game::drawGrid()
+{
+	auto& data = cg.m_data;
+	NodeData& current = data[0][0];
+
+	m_gridTexture.clear();
+
+	for (int y = 0; y < cg.c_MAX_Y; y++)
+	{
+		for (int x = 0; x < cg.c_MAX_X; x++)
+		{
+			current = data[y][x];
+
+			if (current.m_passable)
+			{
+				m_space.setFillColor(sf::Color::Black);
+				m_space.setOutlineColor(sf::Color::White);
+				m_space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+			}
+			else if (!current.m_passable)
+			{
+				m_space.setFillColor(sf::Color::White);
+				m_space.setOutlineColor(sf::Color::Red);
+				m_space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+			}
+			m_gridTexture.draw(m_space);
+		}
+	}
 }
 
 void Game::render()
@@ -217,11 +284,9 @@ void Game::render()
 	// with graph drawn, now draw NPCs
 	for (auto ai : m_NPCs)
 	{
-		NodeData current = ai->m_data;
-
-		m_space.setPosition(static_cast<float>(current.m_x), static_cast<float>(current.m_y));
+		if (ai->atPlayer) continue; // if the NPC is at the player, don't draw them
+		m_space.setPosition(ai->m_worldLoc);
 		m_space.setFillColor(sf::Color::Red);
-
 		m_window.draw(m_space);
 	}
 
@@ -236,12 +301,10 @@ void Game::render()
 
 void Game::beginPath()
 {
-	int playerCell = cg.m_data[c_PLAYER_Y][c_PLAYER_X].m_name;
-
-	std::cout << playerCell << std::endl;
+	m_playerCell = cg.m_data[c_PLAYER_Y][c_PLAYER_X].m_name;
 
 	for (auto AI : m_NPCs)
 	{
-		AI->beginPathing(playerCell);
+		AI->beginPathing(m_playerCell);
 	}
 }

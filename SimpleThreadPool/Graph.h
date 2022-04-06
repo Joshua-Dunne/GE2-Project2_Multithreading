@@ -8,9 +8,12 @@
 #include "NodeComparer.h"
 #include <iostream>
 #include <mutex>
+#include <thread>
 
 template <class NodeType, class ArcType> class GraphArc;
 template <class NodeType, class ArcType> class GraphNode;
+
+static unsigned int s_semaphore = 1;
 
 // ---------------------------------------------------------------------
 //  Name:           Graph
@@ -26,8 +29,7 @@ public:
 
     // Constructor and destructor functions
     Graph( int size );
-    ~Graph();
-    
+    ~Graph();    
 
     // Accessors
     Node * nodeIndex(int index) const 
@@ -43,7 +45,7 @@ public:
     Arc* getArc( int from, int to );        
     void clearMarks();
     void aStar(Node* start, Node* dest, std::vector<Node>& path);
-    void aStarAmbush(Node* start, Node* dest, std::vector<Node>& path);
+    void aStarAmbush(Node* start, Node* dest, std::vector<Node*>& path);
     void reset();
 private:
 	
@@ -210,21 +212,6 @@ GraphArc<NodeType, ArcType>* Graph<NodeType, ArcType>::getArc( int from, int to 
 }
 
 /// <summary>
-/// Clears every mark on all nodes
-/// </summary>
-template<class NodeType, class ArcType>
-void Graph<NodeType, ArcType>::clearMarks() 
-{
-     for( size_t index = 0; index < m_nodes.size(); index++ ) 
-	 {
-          if( nullptr != m_nodes.at(index) ) 
-		  {
-			  m_nodes.at(index)->setMarked(false);
-          }
-     }
-}
-
-/// <summary>
 /// Uses A* to generate a path from the start node to the end node.
 /// This path is stored through a referenced vector, so nothing has to be returned.
 /// </summary>
@@ -326,21 +313,15 @@ void Graph<NodeType, ArcType>::aStar(Node* start, Node* dest, std::vector<Node>&
 /// <param name="dest">Destination node (goal)</param>
 /// <param name="path">Path generated after a successful function run</param>
 template<class NodeType, class ArcType>
-void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<Node>& path)
-{
-   
-    
+void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<Node*>& path)
+{     
     if (start && dest) // make sure the passed in nodes exist
-    {
-        std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;
-        std::cout << "this pq address on thread: " << &pq << std::endl;
-
+    {       
         mtx.lock();
-        reset(); // resets all nodes set as previous for a new calculation
-        clearMarks(); // clears all nodes that are "marked" (already processed)
+        clearMarks();
+
+        std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;       
         bool goalReached = false;
-        Node* closestNode = dest;
-        Node* lastNode = nullptr;
 
         for (Node* node : m_nodes)
         {
@@ -351,13 +332,15 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
 
         }
 
-        start->m_data.m_cost = 0 + start->m_data.m_additionalCost;
+        start->m_data.m_cost = 0; // don't apply additional costs to the start node
         start->setMarked(true);
         pq.push(start);
 
-        closestNode->m_data.m_distance = 40000;
 
+        while (s_semaphore == 0) continue;
 
+        s_semaphore = 0;
+        
         while (!pq.empty() && pq.top() != dest)
         { // while there are nodes to go through, and the top node isn't the destination
             for (auto arc : pq.top()->arcList())
@@ -371,6 +354,7 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
                         if (distantChild < arc.node()->m_data.m_distance + (arc.node()->m_data.m_cost + arc.node()->m_data.m_additionalCost))
                         {
                             arc.node()->m_data.m_cost = (pq.top()->m_data.m_cost + pq.top()->m_data.m_additionalCost) + arc.weight();
+
                             arc.node()->setPrevious(pq.top());
                         }
                     }
@@ -382,47 +366,95 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
                 }
             }
 
-            lastNode = pq.top();
-
-            if ((lastNode->m_data.m_distance) < (closestNode->m_data.m_distance))
-            {
-                closestNode = lastNode;
-            }
-
             pq.pop();
         }
 
+        mtx.unlock();
+        
         // After picking the path to move to, add it to the queue backwards
+
+        int maxNodes = 1000; // only allow so many nodes to be generated at a time
+        int iterations = 0;
+
 
         if (pq.size() > 0)
         {
+            bool looping = false;
             Node* current = pq.top();
-            while (current != nullptr)
+
+            while (current != start && maxNodes > 0)
             {
-                path.push_back(*current);
+                while (current != nullptr && maxNodes > 0)
+                {
+                    if (path.size() > 0)
+                    {
+                        for (size_t i = 0; i < path.size(); i++)
+                        {
+                            if (path[i]->m_data.m_name == current->m_data.m_name) looping = true;
+                        }
+                    }
+                    
 
-                // For A*mbush, we will add an additional cost to our initial cost.
-                // A* typically does not know the cost, and resets it until it is found
-                // to sidestep this, we will calculate the additional cost in a separate variable
-                // and apply the cost later on when it is needed
-                
-                if(current != dest) // do not increase the cost of the destination node
-                    current->m_data.m_additionalCost += 50;
+                    if (looping) break;
+                    path.push_back(current);
 
-                current = current->previous();
+                    // For A*mbush, we will add an additional cost to our initial cost.
+                    // A* typically does not know the cost, and resets it until it is found
+                    // to sidestep this, we will calculate the additional cost in a separate variable
+                    // and apply the cost later on when it is needed
+                    current->m_data.m_additionalCost += 25;
+                    maxNodes--; // decrease the number of nodes to generate
 
+                    current = current->previous();
+
+                }
+
+                if (looping) break;
+
+                if (!current) break;
+
+                path.clear();
+                maxNodes = 1000 + iterations;
+                iterations++; // some AI may get stuck, so increase the look size to see if we can find the goal next time
             }
+            
         }
         else
         {
             std::cout << "PQ empty!" << std::endl;
+            s_semaphore = 1;
         }
 
-        mtx.unlock();
+        dest->m_data.m_additionalCost = 0; // reset the additional cost of the destination node every time
+        s_semaphore = 1;
+
+        if (maxNodes > 0) std::cout << "Leftover nodes: " << maxNodes << std::endl;
+        else std::cout << "Max nodes used." << std::endl;
+
+        while (s_semaphore == 0) continue;
+
+        s_semaphore = 0;
+
+        reset();
+
+        s_semaphore = 1;
+        
     }
-    else // in case of error, we need to unlock the mutex
+}
+
+
+/// <summary>
+/// Clears every mark on all nodes
+/// </summary>
+template<class NodeType, class ArcType>
+void Graph<NodeType, ArcType>::clearMarks()
+{
+    for (size_t index = 0; index < m_nodes.size(); index++)
     {
-        mtx.unlock();
+        if (nullptr != m_nodes.at(index))
+        {
+            m_nodes.at(index)->setMarked(false);
+        }
     }
 }
 
@@ -430,10 +462,11 @@ template<class NodeType, class ArcType>
 inline void Graph<NodeType, ArcType>::reset()
 {
     for (size_t index = 0; index < m_nodes.size(); index++)
-    {
-        
-        m_nodes[index]->setPrevious(nullptr);
-        
+    {   
+        if (nullptr != m_nodes.at(index))
+        {
+            m_nodes[index]->setPrevious(nullptr);
+        }
     }
 }
 

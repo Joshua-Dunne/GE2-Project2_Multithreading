@@ -17,7 +17,9 @@ private:
 	sf::RenderWindow m_window;
 	sf::Clock m_updateClock;
 
-	const int c_MAX_NPCs = 5;
+	int m_playerCell;
+
+	const int c_MAX_NPCs = 50;
 	std::vector<NPC*> m_NPCs;
 
 	const int c_PLAYER_X = 2, c_PLAYER_Y = 2;
@@ -31,6 +33,7 @@ private:
 	float m_viewMoveSpeed = 800.0f;
 	float m_viewZoom = 1.0f;
 	sf::View m_gameView;
+	bool m_drawing;
 
 	sf::RectangleShape m_space;
 	sf::RenderTexture m_gridTexture;
@@ -39,6 +42,8 @@ public:
 	void run();
 	void processInput();
 	void update(sf::Time& dt);
+
+	void drawGrid();
 	void render();
 
 	void beginPath();
