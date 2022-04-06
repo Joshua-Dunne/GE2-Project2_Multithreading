@@ -57,8 +57,7 @@ void CellGenerator::populateData()
 					// 0,2,6,8 are Diagonal, so we need to apply the correct cost
 					if (direction == 0 || direction % 2 == 0)
 					{
-						cost = c_NODE_SIZE * 2;
-						m_graph.addArc(m_data[row][col].m_name, m_data[n_row][n_col].m_name, cost);
+						continue;
 					}
 					else // 1,3,5,7 are next to the node, so give them the correct cost
 					{
@@ -72,8 +71,8 @@ void CellGenerator::populateData()
 
 	// Now that the Data has been filled, generate required files
 	// Uncomment to view data in text file for debugging purposes
-	//generateNodesFile();
-	//generateArcsFile();
+	generateNodesFile();
+	generateArcsFile();
 }
 
 /// <summary>
@@ -98,8 +97,8 @@ void CellGenerator::generateNodesFile()
 				for (int xPos = 0; xPos < c_MAX_X; xPos++)
 				{
 					saveToFile << m_data[yPos][xPos].m_name <<
-						   " " << m_data[yPos][xPos].m_x <<
-						   " " << m_data[yPos][xPos].m_y << std::endl;
+						   "," << m_data[yPos][xPos].m_x <<
+						   "," << m_data[yPos][xPos].m_y << std::endl;
 
 				}
 			}
@@ -152,8 +151,8 @@ void CellGenerator::generateArcsFile()
 
 							// Now that it's been added to the Graph, output it to our file
 							saveToFile << m_data[row][col].m_name <<
-								" " << m_data[n_row][n_col].m_name <<
-								" " << cost << std::endl;
+								"," << m_data[n_row][n_col].m_name <<
+								"," << cost << std::endl;
 						}
 					}
 				}

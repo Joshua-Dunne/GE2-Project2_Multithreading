@@ -212,7 +212,7 @@ void Game::update(sf::Time& dt)
 			if (found) break;
 		}
 	}
-
+	
 	for (auto& ai : m_NPCs)
 	{
 		ai->usePath(dt);

@@ -318,6 +318,12 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
     if (start && dest) // make sure the passed in nodes exist
     {       
         mtx.lock();
+
+        while (s_semaphore == 0) continue;
+
+        s_semaphore = 0;
+
+        reset();
         clearMarks();
 
         std::priority_queue<Node*, std::vector<Node*>, NodeComparer<NodeType, ArcType>> pq;       
@@ -325,7 +331,7 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
 
         for (Node* node : m_nodes)
         {
-            node->m_data.m_cost = std::numeric_limits<int>::max() - 100000; // we do not know the cost until we discover it
+            node->m_data.m_cost = std::numeric_limits<int>::max() - (std::numeric_limits<int>::max() / 2); // we do not know the cost until we discover it
 
             // however, we can calculate the distance to the other nodes here
             node->m_data.m_distance = static_cast<int>(sqrt(pow(dest->m_data.m_x - node->m_data.m_x, 2) + pow(dest->m_data.m_y - node->m_data.m_y, 2)));
@@ -336,10 +342,7 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
         start->setMarked(true);
         pq.push(start);
 
-
-        while (s_semaphore == 0) continue;
-
-        s_semaphore = 0;
+        s_semaphore = 1;
         
         while (!pq.empty() && pq.top() != dest)
         { // while there are nodes to go through, and the top node isn't the destination
@@ -347,6 +350,9 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
             { // go through all the arcs for the top node
                 if (arc.node() != pq.top()->previous())
                 { // make sure we do not process the node we're arcing from
+
+                    while (s_semaphore == 0) continue;
+
                     int distantChild = (pq.top()->m_data.m_cost + pq.top()->m_data.m_additionalCost) + arc.weight() + arc.node()->m_data.m_distance;
 
                     if (arc.node()->m_data.m_passable)
@@ -370,54 +376,29 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
         }
 
         mtx.unlock();
-        
-        // After picking the path to move to, add it to the queue backwards
 
-        int maxNodes = 1000; // only allow so many nodes to be generated at a time
-        int iterations = 0;
+        mtx.lock();
 
+        while (s_semaphore == 0) continue;
+
+        s_semaphore = 0;
+
+        mtx.unlock();
 
         if (pq.size() > 0)
         {
-            bool looping = false;
             Node* current = pq.top();
-
-            while (current != start && maxNodes > 0)
+            while (current != nullptr)
             {
-                while (current != nullptr && maxNodes > 0)
-                {
-                    if (path.size() > 0)
-                    {
-                        for (size_t i = 0; i < path.size(); i++)
-                        {
-                            if (path[i]->m_data.m_name == current->m_data.m_name) looping = true;
-                        }
-                    }
-                    
+                path.push_back(current);
 
-                    if (looping) break;
-                    path.push_back(current);
+                current->m_data.m_additionalCost += 25;
 
-                    // For A*mbush, we will add an additional cost to our initial cost.
-                    // A* typically does not know the cost, and resets it until it is found
-                    // to sidestep this, we will calculate the additional cost in a separate variable
-                    // and apply the cost later on when it is needed
-                    current->m_data.m_additionalCost += 25;
-                    maxNodes--; // decrease the number of nodes to generate
+                current = current->previous();
 
-                    current = current->previous();
+                
 
-                }
-
-                if (looping) break;
-
-                if (!current) break;
-
-                path.clear();
-                maxNodes = 1000 + iterations;
-                iterations++; // some AI may get stuck, so increase the look size to see if we can find the goal next time
             }
-            
         }
         else
         {
@@ -427,18 +408,6 @@ void Graph<NodeType, ArcType>::aStarAmbush(Node* start, Node* dest, std::vector<
 
         dest->m_data.m_additionalCost = 0; // reset the additional cost of the destination node every time
         s_semaphore = 1;
-
-        if (maxNodes > 0) std::cout << "Leftover nodes: " << maxNodes << std::endl;
-        else std::cout << "Max nodes used." << std::endl;
-
-        while (s_semaphore == 0) continue;
-
-        s_semaphore = 0;
-
-        reset();
-
-        s_semaphore = 1;
-        
     }
 }
 

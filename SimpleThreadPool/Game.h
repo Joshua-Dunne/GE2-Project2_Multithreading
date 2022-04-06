@@ -19,7 +19,7 @@ private:
 
 	int m_playerCell;
 
-	const int c_MAX_NPCs = 50;
+	const int c_MAX_NPCs = 500;
 	std::vector<NPC*> m_NPCs;
 
 	const int c_PLAYER_X = 2, c_PLAYER_Y = 2;

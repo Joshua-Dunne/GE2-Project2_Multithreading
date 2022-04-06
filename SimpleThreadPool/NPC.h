@@ -41,7 +41,6 @@ public:
 	float m_speed = 60.0f;
 	sf::Vector2f m_worldLoc = sf::Vector2f{ 0,0 };
 
-	bool beganPathing = false;
 	bool atPlayer = false;
 	void usePath(sf::Time& dt);
 

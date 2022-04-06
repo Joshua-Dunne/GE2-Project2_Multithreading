@@ -98,7 +98,12 @@ void ThreadPool::checkTasks()
 void ThreadPool::clearThreads()
 {
 	// if all the threads are queued waiting, threads exist, and all tasks are complete, we can clean up our threads
-	if (s_queued == std::thread::hardware_concurrency() - 1 && m_threads.size() > 0 && m_tasks.size() == 0)
+	if (m_tasks.size() == 0)
+	{
+		return;
+	}
+
+	if (s_queued == std::thread::hardware_concurrency() - 1 && m_threads.size() > 0)
 	{
 		s_running = false;
 	}
