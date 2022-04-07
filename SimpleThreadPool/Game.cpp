@@ -1,6 +1,6 @@
 #include "Game.h"
 
-Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
+Game::Game() :	m_window(sf::VideoMode(800u, 600u), "A*mbush Thread Pooling")
 {
 	m_gameView = m_window.getDefaultView();
 	//m_window.setFramerateLimit(60u);
@@ -10,7 +10,7 @@ Game::Game() :	m_window(sf::VideoMode(1920u, 1080u), "A*mbush Thread Pooling")
 
 	for (int i = 0; i < c_MAX_NPCs; i++)
 	{
-		int randX = (rand() % cg.c_MAX_X);
+		int randX = ((rand() % cg.c_MAX_X / 4) + (cg.c_MAX_X - cg.c_MAX_X / 4));
 		int randY = (rand() % cg.c_MAX_Y);
 		bool reset = false;
 
@@ -190,15 +190,21 @@ void Game::update(sf::Time& dt)
 		int currCell = 0;
 		bool found = false;
 
+		// get the current mouse position in the window
+		sf::Vector2i pixelPos = sf::Mouse::getPosition(m_window);
+
+		// convert it to world coordinates
+		sf::Vector2f worldPos = m_window.mapPixelToCoords(pixelPos);
+
 		for (int yPos = 0; yPos < cg.c_MAX_Y; yPos++)
 		{
 			for (int xPos = 0; xPos < cg.c_MAX_X; xPos++, currCell++)
 			{
-				if (sf::Mouse::getPosition(m_window).x > cg.m_data[yPos][xPos].m_x
-					&& sf::Mouse::getPosition(m_window).x < cg.m_data[yPos][xPos].m_x + cg.c_NODE_SIZE)
+				if (worldPos.x > cg.m_data[yPos][xPos].m_x
+					&& worldPos.x < cg.m_data[yPos][xPos].m_x + cg.c_NODE_SIZE)
 				{
-					if (sf::Mouse::getPosition(m_window).y > cg.m_data[yPos][xPos].m_y
-						&& sf::Mouse::getPosition(m_window).y < cg.m_data[yPos][xPos].m_y + cg.c_NODE_SIZE)
+					if (worldPos.y > cg.m_data[yPos][xPos].m_y
+						&& worldPos.y < cg.m_data[yPos][xPos].m_y + cg.c_NODE_SIZE)
 					{
 						cg.m_data[yPos][xPos].m_passable = false;
 						cg.getGraph().nodeIndex(currCell)->m_data.m_passable = false;

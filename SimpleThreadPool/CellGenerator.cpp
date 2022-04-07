@@ -34,6 +34,18 @@ void CellGenerator::populateData()
 			m_data[yPos][xPos].m_x = xPos * c_NODE_SIZE;
 			m_data[yPos][xPos].m_y = yPos * c_NODE_SIZE;
 			m_data[yPos][xPos].m_name = currCell;
+
+			if(c_MAX_X == 1000)
+				if ((xPos == 100 && yPos < 800) || (xPos == 400 && yPos > 200) || (xPos == 700 && yPos < 800))
+					m_data[yPos][xPos].m_passable = false;
+
+			if (c_MAX_X == 100)
+				if ((xPos == 10 && yPos < 80) || (xPos == 40 && yPos > 20) || (xPos == 70 && yPos < 80))
+					m_data[yPos][xPos].m_passable = false;
+
+			if (c_MAX_X == 30)
+				if ((xPos == 5 && yPos < 15) || (xPos == 12 && yPos > 15) || (xPos == 22 && yPos < 15))
+					m_data[yPos][xPos].m_passable = false;
 			
 			m_graph.addNode(m_data[yPos][xPos], currCell);
 		}
